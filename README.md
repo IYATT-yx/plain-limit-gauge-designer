@@ -8,4 +8,4 @@
 
 ## 测试环境
 
-* Python 3.13.1（支持 Windows 8 及以上）
+* Python 3.13.8（支持 Windows 8 及以上）
