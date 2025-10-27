@@ -1,5 +1,8 @@
 import json
 from typing import Literal
+from decimal import Decimal, getcontext
+
+getcontext().prec = 10
 
 class QueryData:
     def __init__(self):
@@ -7,18 +10,19 @@ class QueryData:
         # 数据整理为下面格式：
         # [
         #     ((公称尺寸范围下限, 公称尺寸范围上限): ((公差值, T1, Z1), (公差值, T1, Z1), ...)),
-        #     ((公称尺寸范围下限, 公称尺寸范围上限): ((公差值, T1, Z1), (公差值, T1, Z1), ...)},
+        #     ((公称尺寸范围下限, 公称尺寸范围上限): ((公差值, T1, Z1), (公差值, T1, Z1), ...)}，
         #     ...
         # ]
         self.norminalTolT1Z1Data = [
             (
-                tuple(norminalData['norminalRange']),
+                tuple(Decimal(str(x)) for x in norminalData['norminalRange']),
                 tuple(
                     (
-                    tolT1Z1['tol'],
-                    QueryData.ItLevels[i],
-                    tolT1Z1['T1'],
-                    tolT1Z1['Z1']) 
+                        Decimal(str(tolT1Z1['tol'])),
+                        QueryData.ItLevels[i],
+                        Decimal(str(tolT1Z1['T1'])),
+                        Decimal(str(tolT1Z1['Z1']))
+                    )
                     for i, tolT1Z1 in enumerate(norminalData['tolT1Z1s'])
                 )
             )
@@ -28,21 +32,18 @@ class QueryData:
         # 量规公称尺寸、零件公差等级和量规粗糙度
         # 数据整理为下面格式：
         # {
-        # {
         #    "hole": {
-        #           (零件公差等级范围下限, 零件公差等级范围上限): (((量规公称尺寸范围下限， 量规公称尺寸范围上限), 粗糙度), ((量规公称尺寸范围下限， 量规公称尺寸范围上限), 粗糙度), ...),
-        #           (零件公差等级范围下限, 零件公差等级范围上限): (((量规公称尺寸范围下限， 量规公称尺寸范围上限), 粗糙度), ((量规公称尺寸范围下限， 量规公称尺寸范围上限), 粗糙度), ...),
+        #           (零件公差等级范围下限, 零件公差等级范围上限): (((量规公称尺寸范围下限，量规公称尺寸范围上限), 粗糙度), ...),
         #           ...
-        #       }
+        #       },
         #    "shaft": {
-        #           (零件公差等级范围下限, 零件公差等级范围上限): (((量规公称尺寸范围下限， 量规公称尺寸范围上限), 粗糙度), ((量规公称尺寸范围下限， 量规公称尺寸范围上限), 粗糙度), ...),
         #           ...
         #       }
         # }
         self.gaugeNorminalItRaData = {
             feature: {
                 tuple(item['IT']): tuple(
-                    (tuple(nr['nominal']), nr['Ra'])
+                    (tuple(Decimal(str(x)) for x in nr['nominal']), Decimal(str(nr['Ra'])))
                     for nr in item['nominalRa']
                 )
                 for item in norminalRa
@@ -53,78 +54,76 @@ class QueryData:
         # 校规公称尺寸、零件公差等级和量规粗糙度
         # 数据整理为下面格式：
         # {
-        #       (零件公差等级范围下限, 零件公差等级范围上限): (((量规公称尺寸范围下限， 量规公称尺寸范围上限), 粗糙度), ((量规公称尺寸范围下限， 量规公称尺寸范围上限), 粗糙度), ...),
-        #       (零件公差等级范围下限, 零件公差等级范围上限): (((量规公称尺寸范围下限， 量规公称尺寸范围上限), 粗糙度), ((量规公称尺寸范围下限， 量规公称尺寸范围上限), 粗糙度), ...),
+        #       (零件公差等级范围下限, 零件公差等级范围上限): (((量规公称尺寸范围下限，量规公称尺寸范围上限), 粗糙度), ...),
         #       ...
         # }
         self.settingPlugGaugeNorminalItRaData = {
             tuple(item['IT']): tuple(
-                (tuple(nr['nominal']), nr['Ra'])
+                (tuple(Decimal(str(x)) for x in nr['nominal']), Decimal(str(nr['Ra'])))
                 for nr in item['nominalRa']
             )
             for item in json.loads(QueryData.settingPlugGaugeNorminalItRaJson)
         }
 
-    def queryRa(self, feature: Literal['hole', 'shaft'], gaugeNorminal: float, it: Literal[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]):
+    def queryRa(self, feature: Literal['hole', 'shaft'], gaugeNorminal: Decimal, it: Literal[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) -> Decimal | None:
         """
         根据量规公称尺寸和零件公差等级查询粗糙度。
         
         Args:
             feature (str): 零件特征，取值：'hole' 或 'shaft'
-            gaugeNorminal (float): 量规公称尺寸，单位：mm，范围大于 0 至 500
+            gaugeNorminal (Decimal): 量规公称尺寸，单位：mm，范围大于 0 至 500
             it (int): 零件公差等级，IT6-IT16
 
         Returns:
-            float: 粗糙度，单位：μm
+            Decimal: 粗糙度，单位：μm
         """
         for itRange, norminalRaList in self.gaugeNorminalItRaData[feature].items():
             if itRange[0] <= it <= itRange[1]:
                 for (norminalMin, norminalMax), ra in norminalRaList:
-                    if norminalMin < gaugeNorminal <= norminalMax:
+                    if norminalMin <= gaugeNorminal < norminalMax:
                         return ra
         return None
     
-    def querySettingPlugGaugeRa(self, gaugeNorminal: float, it: Literal[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]):
+    def querySettingPlugGaugeRa(self, gaugeNorminal: Decimal, it: Literal[6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) -> Decimal | None:
         """
         根据校规量规公称尺寸和零件公差等级查询粗糙度。
 
         Args:
-            gaugeNorminal (float): 校规量规公称尺寸，单位：mm，范围大于 0 至 500
+            gaugeNorminal (Decimal): 校规量规公称尺寸，单位：mm，范围大于 0 至 500
             it (int): 零件公差等级，IT6-IT16
 
         Returns:
-            float: 粗糙度，单位：μm
+            Decimal: 粗糙度，单位：μm
         """
         for itRange, norminalList in self.settingPlugGaugeNorminalItRaData.items():
             if itRange[0] <= it <= itRange[1]:
                 for (norminalMin, norminalMax), ra in norminalList:
-                    if norminalMin < gaugeNorminal <= norminalMax:
+                    if norminalMin <= gaugeNorminal < norminalMax:
                         return ra
         return None
 
-    def queryItT1Z1(self, norminalSize: float, tolerance: float):
+    def queryItT1Z1(self, norminalSize: Decimal, tolerance: Decimal):
         """
         根据零件尺寸查询其公差等级及量规通止端尺寸参数。
         
         Args:
-            norminalSize (float): 零件尺寸，单位：mm，大于 0 至 500
-            tolerance (float): 零件公差，单位：mm
+            norminalSize (Decimal): 零件尺寸，单位：mm，大于 0 至 500
+            tolerance (Decimal): 零件公差，单位：mm
 
         Returns:
-            tuple: (IT, T1, Z1)，单位：mm。IT 尺寸公差等级；T1：工作量规尺寸公差；Z1：通端工作量规尺寸公差带的中心线至工作最大实体尺寸之间的距离。
+            tuple: (IT, T1, Z1)，单位：mm。
+                   IT：尺寸公差等级；
+                   T1：工作量规尺寸公差；
+                   Z1：通端工作量规尺寸公差带的中心线至工作最大实体尺寸之间的距离。
         """
-        tolerance *= 1000
-        print(f'norminalSize: {norminalSize}, tolerance: {tolerance}')
+        tolerance_um = tolerance * Decimal('1000')
         for (sizeMin, sizeMax), tolT1Z1List in self.norminalTolT1Z1Data:
-            if sizeMin < norminalSize <= sizeMax:
-                print(f'sizeMin: {sizeMin}, sizeMax: {sizeMax}')
-                candidates = [(tol, it, t1, t2) for tol, it, t1, t2 in tolT1Z1List if tol <= tolerance]
+            if sizeMin <= norminalSize < sizeMax:
+                candidates = [(tol, it, t1, z1) for tol, it, t1, z1 in tolT1Z1List if tol <= tolerance_um]
                 if not candidates:
                     return None
-                print(candidates)
                 best = max(candidates, key=lambda x: x[0])
-                print(best)
-                return best[1], best[2] / 1000, best[3] / 1000
+                return best[1], best[2] / Decimal('1000'), best[3] / Decimal('1000')
         return None
 
     # 公差等级 IT6-IT16
@@ -404,7 +403,7 @@ class QueryData:
                     {"tol": 520, "T1": 20, "Z1": 45},
                     {"tol": 810, "T1": 28, "Z1": 66},
                     {"tol": 1300, "T1": 45, "Z1": 100},
-                    {"tol": 2100, "T1": 66, "Z1": 50},
+                    {"tol": 2100, "T1": 66, "Z1": 150},
                     {"tol": 3200, "T1": 100, "Z1": 220}
                 ]
             },
