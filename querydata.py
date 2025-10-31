@@ -117,8 +117,9 @@ class QueryData:
                    Z1：通端工作量规尺寸公差带的中心线至工作最大实体尺寸之间的距离。
         """
         tolerance_um = tolerance * Decimal('1000')
+        print(f'【公差等级查询调试】名义尺寸：{norminalSize}, 公差：{tolerance_um}')
         for (sizeMin, sizeMax), tolT1Z1List in self.norminalTolT1Z1Data:
-            if sizeMin <= norminalSize < sizeMax:
+            if sizeMin < norminalSize <= sizeMax:
                 candidates = [(tol, it, t1, z1) for tol, it, t1, z1 in tolT1Z1List if tol <= tolerance_um]
                 if not candidates:
                     return None
