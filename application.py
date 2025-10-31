@@ -142,11 +142,14 @@ class Application(tk.Frame):
 
         def fmt(x):
             if isinstance(x, Decimal):
-                s = format(x, 'f').rstrip('0').rstrip('.')
-                return s if s else '0'
+                s = format(x, 'f')
+                if '.' in s:
+                    s = s.rstrip('0').rstrip('.')
+                return s
             elif x is None:
                 return '—'
             return str(x)
+
 
         match feature:
             case 'shaft':
