@@ -1,3 +1,11 @@
+"""
+file: querydata.py
+description: 国标数据查询
+author: IYATT-yx
+repository: https://github.com/IYATT-yx/NX-batch-PDF-exporter
+copyright:  Copyright (c) 2026 IYATT-yx.
+            Licensed under the MIT License. See LICENSE file in the project root for full license information.
+"""
 import json
 from typing import Literal
 from decimal import Decimal, getcontext
