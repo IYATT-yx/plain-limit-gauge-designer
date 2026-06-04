@@ -1,3 +1,11 @@
+"""
+file: plain-limit-gauge-designer.py
+description: 光滑极限量规辅助设计工具
+author: IYATT-yx
+repository: https://github.com/IYATT-yx/NX-batch-PDF-exporter
+copyright:  Copyright (c) 2026 IYATT-yx.
+            Licensed under the MIT License. See LICENSE file in the project root for full license information.
+"""
 from application import Application
 
 import tkinter as tk
@@ -11,6 +19,7 @@ def main():
     x = (root.winfo_screenwidth() - width) // 2
     y = (root.winfo_screenheight() - height) // 2
     root.geometry(f'{width}x{height}+{x}+{y}')
+    root.attributes('-topmost', True)
     root.resizable(False, False)
     root.iconbitmap(
         os.path.join(
