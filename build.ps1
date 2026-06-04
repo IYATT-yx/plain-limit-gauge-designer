@@ -3,7 +3,7 @@ $startTime = Get-Date
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 python.exe -m pip install --upgrade pip
-pip install nuitka==2.7.12
+pip install nuitka==4.1.2
 
 python .\savebuildtime.py
 
