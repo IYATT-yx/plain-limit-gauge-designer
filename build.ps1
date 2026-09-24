@@ -5,7 +5,7 @@ python -m venv venv
 python.exe -m pip install --upgrade pip
 pip install nuitka==4.1.2
 
-python .\savebuildtime.py
+Set-Content -Path ".\buildtime.py" -Value "buildTime = '$(Get-Date -Format 'yyyyMMdd_HHmmss')'" -Encoding UTF8
 
 nuitka --standalone --onefile --remove-output --windows-console-mode=disable `
 --enable-plugin=tk-inter `
