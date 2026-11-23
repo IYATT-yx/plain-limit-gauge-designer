@@ -3,11 +3,12 @@ $startTime = Get-Date
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 python.exe -m pip install --upgrade pip
-pip install nuitka==4.1.2
+pip install nuitka==4.3.5
 
 Set-Content -Path ".\buildtime.py" -Value "buildTime = '$(Get-Date -Format 'yyyyMMdd_HHmmss')'" -Encoding UTF8
 
 nuitka --standalone --onefile --remove-output --windows-console-mode=disable `
+--lto=yes `
 --enable-plugin=tk-inter `
 --windows-icon-from-ico=.\icon.ico --include-data-file=.\icon.ico=.\ `
 --output-dir=dist --output-filename=plain-limit-gauge-designer_win_amd64 `
